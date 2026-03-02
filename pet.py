@@ -1,3 +1,5 @@
+import random
+
 from general_functions import *
 import log_writer
 
@@ -53,16 +55,15 @@ class Pet:
 
         action_name = "eat"
 
-        if (self._hunger - HUNGER_REDUCE_WHEN_EAT[self._level - 1]
-                < TRAIT_MIN_VAL):
+        if self._hunger - HUNGER_REDUCE_WHEN_EAT[self._level] < TRAIT_MIN_VAL:
             self._hunger = TRAIT_MIN_VAL
         else:
-            self._hunger -= HUNGER_REDUCE_WHEN_EAT[self._level - 1]
+            self._hunger -= HUNGER_REDUCE_WHEN_EAT[self._level]
 
-        if self._energy + ENERGY_ADD_WHEN_EAT[self._level - 1] > TRAIT_MAX_VAL:
+        if self._energy + ENERGY_ADD_WHEN_EAT[self._level] > TRAIT_MAX_VAL:
             self._energy = TRAIT_MAX_VAL
         else:
-            self._energy += ENERGY_ADD_WHEN_EAT[self._level - 1]
+            self._energy += ENERGY_ADD_WHEN_EAT[self._level]
 
         self._points += POINTS_ADD_WHEN_EAT
 
@@ -76,6 +77,8 @@ class Pet:
             f" points: {self._points}",
         )
 
+        self._action_didnt_succeeded("eat")
+
     def sleep(self) -> None:
         """
         The function for the pet to sleep.
@@ -84,17 +87,15 @@ class Pet:
 
         action_name = "sleep"
 
-        if (self._hunger + HUNGER_ADD_WHEN_SLEEP[self._level - 1]
-                > TRAIT_MAX_VAL):
+        if self._hunger + HUNGER_ADD_WHEN_SLEEP[self._level] > TRAIT_MAX_VAL:
             self._hunger = TRAIT_MAX_VAL
         else:
-            self._hunger += HUNGER_ADD_WHEN_SLEEP[self._level - 1]
+            self._hunger += HUNGER_ADD_WHEN_SLEEP[self._level]
 
-        if (self._energy + ENERGY_ADD_WHEN_SLEEP[self._level - 1]
-                > TRAIT_MAX_VAL):
+        if self._energy + ENERGY_ADD_WHEN_SLEEP[self._level] > TRAIT_MAX_VAL:
             self._energy = TRAIT_MAX_VAL
         else:
-            self._energy += ENERGY_ADD_WHEN_SLEEP[self._level - 1]
+            self._energy += ENERGY_ADD_WHEN_SLEEP[self._level]
 
         self._points += POINTS_ADD_WHEN_SLEEP
 
@@ -108,21 +109,22 @@ class Pet:
             f" points: {self._points}",
         )
 
+        self._action_didnt_succeeded("sleep")
+
     def play(self) -> None:
 
         action_name = "play"
 
-        if (self._energy - ENERGY_REDUCE_WHEN_PLAY[self._level - 1]
-                < TRAIT_MIN_VAL):
+        if self._energy - ENERGY_REDUCE_WHEN_PLAY[self._level] < TRAIT_MIN_VAL:
             self._energy = TRAIT_MIN_VAL
         else:
-            self._energy -= ENERGY_REDUCE_WHEN_PLAY[self._level - 1]
+            self._energy -= ENERGY_REDUCE_WHEN_PLAY[self._level]
 
-        if (self._happiness + HAPPINESS_ADD_WHEN_PLAY[self._level - 1]
+        if (self._happiness + HAPPINESS_ADD_WHEN_PLAY[self._level]
                 > TRAIT_MAX_VAL):
             self._happiness = TRAIT_MAX_VAL
         else:
-            self._happiness += HAPPINESS_ADD_WHEN_PLAY[self._level - 1]
+            self._happiness += HAPPINESS_ADD_WHEN_PLAY[self._level]
 
         self._points += POINTS_ADD_WHEN_PLAY
 
@@ -136,13 +138,60 @@ class Pet:
             f" points: {self._points}",
         )
 
+        self._action_didnt_succeeded("play")
+
     @property
-    def get_pets_score(self) -> float:
+    def pets_score(self) -> float:
         """
         The function returns pets weighted score.
         :return: The pets weighted score.
         """
         positive_hunger = TRAIT_MAX_VAL - self._hunger
-        pets_score = (positive_hunger + self._energy + self._happiness) / 3
-        log_writer.pet_score_info(pets_score)
-        return pets_score
+        return (positive_hunger + self._energy + self._happiness) / 3
+
+    def _action_didnt_succeeded(self, action_name: str) -> None:
+        """
+        The function randomly choose if the action succeeded.
+        for highst level the chances for an action to fail is bigger.
+        :param action_name: The acction that happend.
+        :return: None.
+        """
+        if random.randrange(0, 6 - self._level) == 2:
+            random_number = random.randrange(0, 10)
+            if action_name == "eat":
+                if (
+                    self._hunger + HUNGER_REDUCE_WHEN_EAT[self._level]
+                        + random_number > TRAIT_MAX_VAL
+                ):
+                    self._hunger += (
+                            HUNGER_REDUCE_WHEN_EAT[self._level] + random_number)
+                else:
+                    self._hunger = TRAIT_MAX_VAL
+                print("ughhh the pet vomit")
+                log_writer.action_fail_info(action_name)
+            elif action_name == "sleep":
+                if (
+                    self._energy - ENERGY_ADD_WHEN_SLEEP[self._level]
+                        - random_number < TRAIT_MIN_VAL
+                ):
+                    self._energy -= (ENERGY_ADD_WHEN_SLEEP[self._level]
+                                     - random_number)
+                else:
+                    self._energy -= TRAIT_MIN_VAL
+                print("ughhh I slept so bad!! I just more tired now")
+                log_writer.action_fail_info(action_name)
+            elif action_name == "play":
+                if (
+                    self._happiness
+                    - HAPPINESS_ADD_WHEN_PLAY[self._level]
+                    - random_number
+                    < TRAIT_MIN_VAL
+                ):
+                    self._happiness -= (
+                        HAPPINESS_ADD_WHEN_PLAY[self._level] - random_number
+                    )
+                else:
+                    self._happiness -= TRAIT_MIN_VAL
+                print("ughhh I didnt like the play at all!"
+                      " Now I am not happy at all.")
+                log_writer.action_fail_info(action_name)

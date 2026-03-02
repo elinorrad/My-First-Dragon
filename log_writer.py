@@ -7,6 +7,9 @@ def config_logging(log_file: str) -> None:
     :param log_file: The name of the log file
     :return: None.
     """
+    if logging.root.handlers:
+        return
+
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%d-%b-%y %H:%M:%S",
@@ -18,11 +21,12 @@ def config_logging(log_file: str) -> None:
     console.setLevel(logging.ERROR)
     console.setFormatter(logging.Formatter(f"\n%(levelname)s - %(message)s"))
     logger.addHandler(console)
+    return None
 
 
 def new_pet_log_info(
-    name: str, pet_type: str, hunger: int, happiness: int,
-        energy: int, points: int) -> None:
+    name: str, pet_type: str, hunger: int,
+        happiness: int, energy: int, points: int) -> None:
     """
     The function creates a log about newly created pet.
     :param name: The name of the pet.
@@ -33,11 +37,9 @@ def new_pet_log_info(
     :param points: The points the pet has.
     :return: None.
     """
-    logging.info(
-        f"New pet was created! Name: {name}, Type: {pet_type},"
-        f" Hunger: {hunger},"
-        f"Happiness: {happiness}, Energy: {energy}, Points: {points}"
-    )
+    logging.info("New pet was created! Name: %s, Type: %s,"
+                 " Hunger: %s, Happiness: %s, Energy: %s, Points: %s",
+                 name, pet_type, hunger, happiness, energy, points)
 
 
 def action_log_info(action: str) -> None:
@@ -49,111 +51,57 @@ def action_log_info(action: str) -> None:
     logging.info(f"Action: {action} was made")
 
 
-def pet_type_log_error(pet_type: str) -> None:
+def any_error(data: str) -> None:
     """
-    The function creates an error log when invalid pet type was given.
-    :param pet_type: The type of pet.
-    :return: None.
-    """
-    logging.error(f"The pet type {pet_type} is invalid.")
-
-
-def pet_name_log_error() -> None:
-    """
-    The function creates an error log when empty pet name was given.
+    The function creates an error log for any error.
+    :param data: The error.
     :return:
     """
-    logging.error(f"Pet name cant be empty.")
+    logging.error(f"{data}")
 
 
-def invalid_traits_param_error() -> None:
-    """
-    The function creates an error log when invalid pet traits params was given.
-    :return: None.
-    """
-    logging.error(f"Invalid pet traits params were given.")
-
-
-def invalid_level_error() -> None:
-    """
-    The function creates an error log when invalid level was given.
-    :return: None.
-    """
-    logging.error(f"Invalid level was given.")
-
-
-def invalid_action_error() -> None:
-    """
-    The function creates an error log when invalid action was given.
-    :return: None.
-    """
-    logging.error(f"Invalid action was given.")
-
-
-def invalid_level_not_int_error() -> None:
-    """
-    The function creates an error log when invalid level was given.
-    :return: None.
-    """
-    logging.error(f"Invalid level! Level must be an integer.")
-
-
-def level_chose_info(level: int) -> None:
-    """
-    The function creates an info log when level is chosen.
-    :param level: The level chosen.
-    :return: None.
-    """
-    logging.info(f"Chosen level: {level}")
-
-
-def pet_type_chose_info(pet_type: str) -> None:
+def chose_info(what_chosen: str, data: str) -> None:
     """
     The function creates an info log when pet type is chosen.
-    :param pet_type: The type of pet.
+    :param what_chosen: what was chosen.
+    :param data: The choice.
     :return: None.
     """
-    logging.info(f"Chosen pet type: {pet_type}")
+    logging.info(f"Chosen {what_chosen}: {data}")
 
 
-def pet_name_chose_info(pet_name: str) -> None:
+def any_info(data: str) -> None:
     """
-    The function creates an info log when pet name is chosen.
-    :param pet_name: The name of the pet.
+    The function creates an info log for any info.
+    :param data: The info.
     :return: None.
     """
-    logging.info(f"Chosen pet name: {pet_name}")
+    logging.info(f"{data}")
 
 
-def pet_score_info(score: float) -> None:
+def invalid_not_int_error(what_invalid: str) -> None:
     """
-    The function creates an info log about pet score.
-    :param score: pet score.
+    The function creates an error log when str was given instead of int.
+    :param what_invalid: what invalid, for example: level, action...
     :return: None.
     """
-    logging.info(f"Pet score: {score}")
+    logging.error(f"Invalid {what_invalid}! Please enter an integer.")
 
 
-def win_info() -> None:
+def invalid_error(what_invalid: str, data: str) -> None:
     """
-    The function creates an info log when there is a win.
+    The function creates an error log when invalid pet type was given.
+    :param what_invalid: what invalid, for example: level, action...
+    :param data: The wrong input that was given.
     :return: None.
     """
-    logging.info(f"Win!")
+    logging.error(f"The {what_invalid} {data} is invalid.")
 
 
-def invalid_selection_not_int_error() -> None:
+def action_fail_info(data: str) -> None:
     """
-    The function creates an error log when invalid selection was given.
+    The function creates an action fails.
+    :param data: The action.
     :return: None.
     """
-    logging.error(f"Invalid selection! Selection must be an integer.")
-
-
-def invalid_selection_error(selection: int) -> None:
-    """
-    The function creates an error log when invalid selection was given.
-    :param selection: The selection that was given.
-    :return: None.
-    """
-    logging.error(f"Invalid selection! {selection} isnt an exist selection.")
+    logging.info(f"Action {data} failed.")

@@ -10,8 +10,13 @@ class Actions(Enum):
     EXIT = auto()
 
 
+class Pets(Enum):
+    DRAGON = 1
+    CAPYBARA = auto()
+    ARMADILLO = auto()
+
+
 # *****DEFAULTS*****
-POSSIBLE_PETS = ["Dragon", "Capybara", "Labubu"]
 DEFAULT_HUNGER = 50
 DEFAULT_HAPPINESS = 50
 DEFAULT_ENERGY = 50
@@ -23,18 +28,18 @@ DEFAULT_LOG_FILE = "log.txt"
 
 # *****PARAMS CHANGE FOR ACTION*****
 # Eat
-HUNGER_REDUCE_WHEN_EAT = [25, 20, 20]
-ENERGY_ADD_WHEN_EAT = [20, 10, 10]
+HUNGER_REDUCE_WHEN_EAT = {1: 25, 2: 20, 3: 20}
+ENERGY_ADD_WHEN_EAT = {1: 20, 2: 10, 3: 10}
 POINTS_ADD_WHEN_EAT = 15
 
 # Sleep
-HUNGER_ADD_WHEN_SLEEP = [10, 20, 15]
-ENERGY_ADD_WHEN_SLEEP = [50, 40, 10]
+HUNGER_ADD_WHEN_SLEEP = {1: 10, 2: 20, 3: 15}
+ENERGY_ADD_WHEN_SLEEP = {1: 50, 2: 40, 3: 10}
 POINTS_ADD_WHEN_SLEEP = 10
 
 # Play
-ENERGY_REDUCE_WHEN_PLAY = [5, 10, 10]
-HAPPINESS_ADD_WHEN_PLAY = [25, 30, 20]
+ENERGY_REDUCE_WHEN_PLAY = {1: 5, 2: 10, 3: 10}
+HAPPINESS_ADD_WHEN_PLAY = {1: 25, 2: 30, 3: 20}
 POINTS_ADD_WHEN_PLAY = 20
 
 
@@ -52,6 +57,6 @@ MENU_MSG = (
 )
 
 LEVEL_MSG = (
-    "Which level would you like to play:\n" "1. Easy.\n"
-    "2. Medium.\n" "3. Hard.\n"
+    "Which level would you like to play:\n"
+    "1. Easy.\n" "2. Medium.\n" "3. Hard.\n"
 )

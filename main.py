@@ -1,4 +1,4 @@
-from Pet import Pet
+from pet import Pet
 from general_functions import *
 import log_writer
 
@@ -8,32 +8,46 @@ def create_pet(log_file: str) -> Pet:
     The function creates a new pet.
     :return: The new pet.
     """
-    pet_type = ""
-    pet_name = "\t"
-    level = 0
-
-    while not check_pets_type(pet_type):
+    while True:
         print_possible_pet_types()
-        pet_type = input("What is your pet type? ")
-    log_writer.pet_type_chose_info(pet_type)
-    print("The chosen pet type is " + pet_type)
+        try:
+            pet_type = int(input("What is your pet type? "))
+        except ValueError:
+            pet_type = 0
+            log_writer.invalid_not_int_error("pet type")
+            continue
 
-    while not check_pet_name(pet_name):
+        if check_pets_type(pet_type):
+            break
+
+    log_writer.chose_info("pet type", Pets(pet_type).name.capitalize())
+    print("The chosen pet type is " + Pets(pet_type).name.capitalize())
+
+    while True:
         print("One rule for pat name: Pat name can't be empty!")
         pet_name = input("What is your pet name? ")
-    log_writer.pet_name_chose_info(pet_name)
+
+        if check_pet_name(pet_name):
+            break
+
+    log_writer.chose_info("pet name", pet_name)
     print("The chosen pet name is " + pet_name)
 
-    while not check_chosen_level(level):
+    while True:
         print(LEVEL_MSG)
         try:
             level = int(input("Choose a level: "))
-            log_writer.level_chose_info(level)
+            log_writer.chose_info("level", str(level))
         except ValueError:
             level = 0
-            log_writer.invalid_level_not_int_error()
+            log_writer.invalid_not_int_error("level")
+            continue
+
+        if check_chosen_level(level):
+            break
+
     try:
-        my_pet = Pet(pet_name, pet_type, level, log_file=log_file)
+        my_pet = Pet(pet_name, Pets(pet_type).name, level, log_file=log_file)
         return my_pet
     except ValueError as e:
         print(e)
@@ -48,15 +62,15 @@ def play(my_pet: Pet) -> None:
     :return: None.
     """
     while True:
-        if my_pet.get_pets_score == 100:
-            log_writer.win_info()
+        if my_pet.pets_score == 100:
+            log_writer.any_info("Win!")
             print("You win!")
             break
         print(MENU_MSG)
         try:
             selection = int(input("What action would you like to do? "))
         except ValueError:
-            log_writer.invalid_selection_not_int_error()
+            log_writer.invalid_not_int_error("selection")
             continue
         if selection == Actions.EAT.value:
             my_pet.eat()
@@ -65,11 +79,13 @@ def play(my_pet: Pet) -> None:
         elif selection == Actions.PLAY.value:
             my_pet.play()
         elif selection == Actions.WEIGHTED_SCORE.value:
-            print(my_pet.get_pets_score)
+            pets_score = my_pet.pets_score
+            print(pets_score)
+            log_writer.any_info(f"Pet score: {pets_score}")
         elif selection == Actions.EXIT.value:
             break
         else:
-            log_writer.invalid_selection_error(selection)
+            log_writer.invalid_error("selection", str(selection))
 
 
 def main():
