@@ -3,16 +3,14 @@ import log_writer
 from defaults import *
 
 
-def check_pets_type(pet_type: str) -> bool:
+def check_pets_type(pet_type: int) -> bool:
     """
     This function checks if the pet type is valid.
     :param pet_type: The pet type to be checked.
     :return: If the pet type is valid.
     """
-    if pet_type == "":
-        return False
-    elif pet_type not in POSSIBLE_PETS:
-        log_writer.pet_type_log_error(pet_type)
+    if pet_type not in [pet.value for pet in Pets]:
+        log_writer.invalid_error("pet type", str(pet_type))
         return False
     return True
 
@@ -23,10 +21,8 @@ def check_pet_name(name: str) -> bool:
     :param name: The pet name to be checked.
     :return: If the pet name is valid.
     """
-    if name == "\t":
-        return False
-    elif name.strip() == "":
-        log_writer.pet_name_log_error()
+    if name.strip() == "":
+        log_writer.any_error("Pet name cant be empty.")
         return False
     return True
 
@@ -49,7 +45,10 @@ def check_pet_params(hunger: int, happiness: int, energy: int) -> None:
         or energy < TRAIT_MIN_VAL
         or energy > TRAIT_MAX_VAL
     ):
-        log_writer.invalid_traits_param_error()
+        log_writer.invalid_error(
+            "traits param",
+            f"hunger: {hunger}, " f"happiness: {happiness}, energy: {energy}",
+        )
         raise ValueError("One of the traits parameters is invalid.")
 
 
@@ -59,10 +58,8 @@ def check_chosen_level(level: int) -> bool:
     :param level: The chosen level to be checked.
     :return: If the chosen level is valid.
     """
-    if level == 0:
-        return False
     if level != 1 and level != 2 and level != 3:
-        log_writer.invalid_level_error()
+        log_writer.invalid_error("level", str(level))
         return False
     return True
 
@@ -73,8 +70,8 @@ def print_possible_pet_types() -> None:
     :return: None.
     """
     print("Here is the possible pet types: ")
-    for pet in POSSIBLE_PETS:
-        print(pet, end=" ")
+    for pet in Pets:
+        print(f"{pet.value}.", pet.name.capitalize(), end=" ")
     print()
 
 
@@ -84,11 +81,10 @@ def generate_log_file_path() -> str:
     :return: The log file path.
     """
     log_file = DEFAULT_LOG_FILE
-    i = 0
-    for filename in os.listdir(os.getcwd()):
-        if log_file in filename:
-            i += 1
-            log_file = DEFAULT_LOG_FILE + str(i)
+    i = 1
+    while log_file in os.listdir(os.getcwd()):
+        log_file = DEFAULT_LOG_FILE + str(i)
+        i += 1
     with open(log_file, "w"):
         pass
     return log_file
