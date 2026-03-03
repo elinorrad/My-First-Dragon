@@ -1,0 +1,14 @@
+{% extends 'base.html'%}
+{% block title %}
+    Home Page <3
+{% endblock %}
+{% block content %}
+    <h1>Welcome to my first dragon😍</h1>
+    <h2>You can choose one of the following:</h2>
+    <form action="{{ url_for('status') }}" method="get">
+        <button type="submit" class="button button1">Status page</button>
+    </form>
+    <form action="{{ url_for('action') }}" method="get">
+        <button type="submit" class="button button1">Action page</button>
+    </form>
+{% endblock %}

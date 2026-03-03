@@ -1,0 +1,12 @@
+{% extends 'base.html'%}
+{% block title %}
+    Status Page <3
+{% endblock %}
+{% block content %}
+    <h1>Here is the status of you pet༼ つ ◕_◕ ༽つ🐱‍🚀</h1>
+    <h2> Hunger: {{ data.hunger }}</h2>
+    <h2> Energy: {{ data.energy }}</h2>
+    <h2> Happiness: {{ data.happiness }}</h2>
+    <h2> Points: {{ data.points }}</h2>
+    <h2> Pets score: {{ data.pets_score }}</h2>
+{% endblock %}
