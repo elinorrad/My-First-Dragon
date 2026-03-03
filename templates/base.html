@@ -3,9 +3,31 @@
   <title>{% block title %} {% endblock %}</title>
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css')}}">
 </head>
-<body>
-  {% block content %}
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css')}}">
-  {% endblock %}
-</body>
+  <body>
+    <div class="top-button">
+      <form action="{{ url_for('home') }}" method="get">
+        <button type="submit" name="home" value="home" class="top-button">
+          <img src="{{ url_for('static', filename='images/home.png')}}">
+        </button>
+      </form>
+      <form action="{{ url_for('status') }}" method="get">
+        <button type="submit" name="status" value="status" class="top-button">
+          <img src="{{ url_for('static', filename='images/status.png')}}">
+        </button>
+      </form>
+      <form action="{{ url_for('action') }}" method="get">
+        <button type="submit" name="action" value="action" class="top-button">
+          <img src="{{ url_for('static', filename='images/action.png')}}">
+        </button>
+      </form>
+      <form action="{{ url_for('bi') }}" method="get">
+        <button type="submit" name="bi" value="bi" class="top-button">
+          <img src="{{ url_for('static', filename='images/bi.png')}}">
+        </button>
+      </form>
+
+    </div>
+    {% block content %}
+    {% endblock %}
+  </body>
 </html>

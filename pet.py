@@ -1,8 +1,12 @@
 import random
-from typing import Tuple, List, Dict
+from typing import Dict
 
-from general_functions import *
+from opentelemetry.trace import Tracer
+
+import general_functions
 import log_writer
+import defaults
+import sqlite_db
 
 
 class Pet:
@@ -11,11 +15,13 @@ class Pet:
         name: str,
         pet_type: str,
         level: int,
-        hunger: int = DEFAULT_HUNGER,
-        happiness: int = DEFAULT_HAPPINESS,
-        energy: int = DEFAULT_ENERGY,
-        points: int = DEFAULT_POINTS,
-        log_file: str = DEFAULT_LOG_FILE,
+        session_id: str,
+        tracer: Tracer,
+        hunger: int = defaults.DEFAULT_HUNGER,
+        happiness: int = defaults.DEFAULT_HAPPINESS,
+        energy: int = defaults.DEFAULT_ENERGY,
+        points: int = defaults.DEFAULT_POINTS,
+        log_file: str = defaults.DEFAULT_LOG_FILE
     ) -> None:
         """
         The constructor for Pet.
@@ -27,7 +33,8 @@ class Pet:
         :param points: The initial points of the pet.
         :return: None.
         """
-        check_pet_params(hunger, happiness, energy)
+        general_functions.check_pet_params(hunger, happiness,
+                                           energy, session_id)
         self._name = name
         self._pet_type = pet_type
         self._level = level
@@ -37,7 +44,19 @@ class Pet:
         self._points = points
         self._log_file = log_file
         self._history: list = []
-        log_writer.new_pet_log_info(name, pet_type, hunger, happiness, energy, points)
+        self._session_id = session_id
+        #self._tracer = tracer
+        log_writer.new_pet_log_info(name, pet_type, hunger,
+                                    happiness, energy, points,
+                                    self._session_id)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # del state["_tracer"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
     def _add_action_to_history(self, action: str) -> None:
         """
@@ -55,38 +74,39 @@ class Pet:
 
         action_name = "eat"
 
-        if self._hunger - HUNGER_REDUCE_WHEN_EAT[self._level] < TRAIT_MIN_VAL:
-            self._hunger = TRAIT_MIN_VAL
-        else:
-            self._hunger -= HUNGER_REDUCE_WHEN_EAT[self._level]
+        is_succeeded = self._action_succeeded(action_name)
+        if not is_succeeded:
+            return "ughhh the pet vomited"
 
-        if self._energy + ENERGY_ADD_WHEN_EAT[self._level] > TRAIT_MAX_VAL:
-            self._energy = TRAIT_MAX_VAL
-        else:
-            self._energy += ENERGY_ADD_WHEN_EAT[self._level]
+        # with self._tracer.start_as_current_span("update_traits") as span:
+        #     span.set_attribute("hunger_before", self._hunger)
 
-        self._points += POINTS_ADD_WHEN_EAT
-
-        self._add_action_to_history(action_name)
-        log_writer.action_log_info(action_name)
-
-        print(
-            "The pet ate!",
-            f"Current trait values: hunger: {self._hunger},"
-            f" energy: {self._energy}, happiness: {self._happiness},"
-            f" points: {self._points}",
+        self._hunger = general_functions.clamp(
+            self._hunger - defaults.HUNGER_REDUCE_WHEN_EAT[self._level],
+            defaults.TRAIT_MIN_VAL,
+            defaults.TRAIT_MAX_VAL,
         )
 
-        is_failed = self._action_didnt_succeeded("eat")
-        if is_failed:
-            return "ughhh the pet vomit"
-        else:
-            return (
-                f"The pet ate! "
-                f"Current trait values: hunger: {self._hunger},"
-                f" energy: {self._energy}, happiness: {self._happiness},"
-                f" points: {self._points}"
-            )
+        self._energy = general_functions.clamp(
+            self._energy + defaults.ENERGY_ADD_WHEN_EAT[self._level],
+            defaults.TRAIT_MIN_VAL,
+            defaults.TRAIT_MAX_VAL,
+        )
+
+            # span.set_attribute("hunger_after", self._hunger)
+
+        self._points += defaults.POINTS_ADD_WHEN_EAT
+
+        self._add_action_to_history(action_name)
+        log_writer.action_log_info(action_name, self)
+        sqlite_db.update_pet(self._session_id, self, defaults.DATABASE_FILE)
+
+        return (
+            f"The pet ate! "
+            f"Current trait values: hunger: {self._hunger},"
+            f" energy: {self._energy}, happiness: {self._happiness},"
+            f" points: {self._points}"
+        )
 
     def sleep(self) -> str:
         """
@@ -96,38 +116,34 @@ class Pet:
 
         action_name = "sleep"
 
-        if self._hunger + HUNGER_ADD_WHEN_SLEEP[self._level] > TRAIT_MAX_VAL:
-            self._hunger = TRAIT_MAX_VAL
-        else:
-            self._hunger += HUNGER_ADD_WHEN_SLEEP[self._level]
+        is_succeeded = self._action_succeeded(action_name)
+        if not is_succeeded:
+            return "ughhh I slept so bad!! I am just more tired now"
 
-        if self._energy + ENERGY_ADD_WHEN_SLEEP[self._level] > TRAIT_MAX_VAL:
-            self._energy = TRAIT_MAX_VAL
-        else:
-            self._energy += ENERGY_ADD_WHEN_SLEEP[self._level]
-
-        self._points += POINTS_ADD_WHEN_SLEEP
-
-        self._add_action_to_history(action_name)
-        log_writer.action_log_info(action_name)
-
-        print(
-            "The pet slept!",
-            f"Current trait values: hunger: {self._hunger},"
-            f" energy: {self._energy}, happiness: {self._happiness},"
-            f" points: {self._points}",
+        self._hunger = general_functions.clamp(
+            self._hunger + defaults.HUNGER_ADD_WHEN_SLEEP[self._level],
+            defaults.TRAIT_MIN_VAL,
+            defaults.TRAIT_MAX_VAL,
         )
 
-        is_failed = self._action_didnt_succeeded("sleep")
-        if is_failed:
-            return "ughhh I slept so bad!! I just more tired now"
-        else:
-            return (
-                f"The pet slept! "
-                f"Current trait values: hunger: {self._hunger},"
-                f" energy: {self._energy}, happiness: {self._happiness},"
-                f" points: {self._points}"
-            )
+        self._energy = general_functions.clamp(
+            self._energy + defaults.ENERGY_ADD_WHEN_SLEEP[self._level],
+            defaults.TRAIT_MIN_VAL,
+            defaults.TRAIT_MAX_VAL,
+        )
+
+        self._points += defaults.POINTS_ADD_WHEN_SLEEP
+
+        self._add_action_to_history(action_name)
+        log_writer.action_log_info(action_name, self)
+        sqlite_db.update_pet(self._session_id, self, defaults.DATABASE_FILE)
+
+        return (
+            f"The pet slept! "
+            f"Current trait values: hunger: {self._hunger},"
+            f" energy: {self._energy}, happiness: {self._happiness},"
+            f" points: {self._points}"
+        )
 
     def play(self) -> str:
         """
@@ -137,46 +153,43 @@ class Pet:
 
         action_name = "play"
 
-        if self._energy - ENERGY_REDUCE_WHEN_PLAY[self._level] < TRAIT_MIN_VAL:
-            self._energy = TRAIT_MIN_VAL
-        else:
-            self._energy -= ENERGY_REDUCE_WHEN_PLAY[self._level]
+        is_succeeded = self._action_succeeded("play")
+        if not is_succeeded:
+            return "ughhh I didn't like the play at all!" \
+                   " Now I am not happy at all."
 
-        if self._happiness + HAPPINESS_ADD_WHEN_PLAY[self._level] > TRAIT_MAX_VAL:
-            self._happiness = TRAIT_MAX_VAL
-        else:
-            self._happiness += HAPPINESS_ADD_WHEN_PLAY[self._level]
-
-        self._points += POINTS_ADD_WHEN_PLAY
-
-        self._add_action_to_history(action_name)
-        log_writer.action_log_info(action_name)
-
-        print(
-            "The pet played! ",
-            f"Current trait values: hunger: {self._hunger},"
-            f" energy: {self._energy}, happiness: {self._happiness},"
-            f" points: {self._points}",
+        self._energy = general_functions.clamp(
+            self._energy - defaults.ENERGY_REDUCE_WHEN_PLAY[self._level],
+            defaults.TRAIT_MIN_VAL,
+            defaults.TRAIT_MAX_VAL,
         )
 
-        is_failed = self._action_didnt_succeeded("play")
-        if is_failed:
-            return "ughhh I didnt like the play at all! Now I am not happy at all."
-        else:
-            return (
-                f"The pet played! "
-                f"Current trait values: hunger: {self._hunger},"
-                f" energy: {self._energy}, happiness: {self._happiness},"
-                f" points: {self._points}"
-            )
+        self._happiness = general_functions.clamp(
+            self._happiness + defaults.HAPPINESS_ADD_WHEN_PLAY[self._level],
+            defaults.TRAIT_MIN_VAL,
+            defaults.TRAIT_MAX_VAL,
+        )
+
+        self._points += defaults.POINTS_ADD_WHEN_PLAY
+
+        self._add_action_to_history(action_name)
+        log_writer.action_log_info(action_name, self)
+        sqlite_db.update_pet(self._session_id, self, defaults.DATABASE_FILE)
+
+        return (
+            f"The pet played! "
+            f"Current trait values: hunger: {self._hunger},"
+            f" energy: {self._energy}, happiness: {self._happiness},"
+            f" points: {self._points}"
+        )
 
     @property
-    def pets_score(self) -> float:
+    def pet_score(self) -> float:
         """
         The function returns pets weighted score.
         :return: The pets weighted score.
         """
-        positive_hunger = TRAIT_MAX_VAL - self._hunger
+        positive_hunger = defaults.TRAIT_MAX_VAL - self._hunger
         return (positive_hunger + self._energy + self._happiness) / 3
 
     @property
@@ -190,53 +203,85 @@ class Pet:
             "energy": str(self._energy),
             "happiness": str(self._happiness),
             "points": str(self._points),
-            "pets_score": str(self.pets_score),
+            "pet_score": str(self.pet_score),
         }
 
-    def _action_didnt_succeeded(self, action_name: str) -> bool:
+    @property
+    def log_file(self) -> str:
+        """
+        The function returns the log file name.
+        :return: The log file name.
+        """
+        return self._log_file
+
+    @property
+    def pet_type(self) -> str:
+        """
+        The function returns the pet type.
+        :return: The pet type.
+        """
+        return self._pet_type
+
+    @property
+    def pet_name(self) -> str:
+        """
+        The function returns the pet name.
+        :return: The pet name.
+        """
+        return self._name
+
+    @property
+    def session_id(self) -> str:
+        """
+        The function returns the session id.
+        :return: The session id of the session the pet belongs to.
+        """
+        return self._session_id
+
+    def _action_succeeded(self, action_name: str) -> bool:
         """
         The function randomly choose if the action succeeded.
-        for highst level the chances for an action to fail is bigger.
-        :param action_name: The acction that happend.
+        for highest level the chances for an action to fail is bigger.
+        :param action_name: The action that happened.
         :return: If the action failed.
         """
         if random.randrange(0, 6 - self._level) == 2:
             random_number = random.randrange(0, 10)
             if action_name == "eat":
-                if (
-                    self._hunger + HUNGER_REDUCE_WHEN_EAT[self._level] + random_number
-                    > TRAIT_MAX_VAL
-                ):
-                    self._hunger += HUNGER_REDUCE_WHEN_EAT[self._level] + random_number
-                else:
-                    self._hunger = TRAIT_MAX_VAL
-                print("ughhh the pet vomit")
-                log_writer.action_fail_info(action_name)
-            elif action_name == "sleep":
-                if (
-                    self._energy - ENERGY_ADD_WHEN_SLEEP[self._level] - random_number
-                    < TRAIT_MIN_VAL
-                ):
-                    self._energy -= ENERGY_ADD_WHEN_SLEEP[self._level] - random_number
-                else:
-                    self._energy -= TRAIT_MIN_VAL
-                print("ughhh I slept so bad!! I just more tired now")
-                log_writer.action_fail_info(action_name)
-            elif action_name == "play":
-                if (
-                    self._happiness
-                    - HAPPINESS_ADD_WHEN_PLAY[self._level]
-                    - random_number
-                    < TRAIT_MIN_VAL
-                ):
-                    self._happiness -= (
-                        HAPPINESS_ADD_WHEN_PLAY[self._level] - random_number
-                    )
-                else:
-                    self._happiness -= TRAIT_MIN_VAL
-                print(
-                    "ughhh I didnt like the play at all!" " Now I am not happy at all."
+                new_hunger = (
+                    self._hunger
+                    + defaults.HUNGER_REDUCE_WHEN_EAT[self._level]
+                    + random_number
                 )
-                log_writer.action_fail_info(action_name)
-            return True
-        return False
+                self._hunger = general_functions.clamp(
+                    new_hunger, defaults.TRAIT_MIN_VAL, defaults.TRAIT_MAX_VAL
+                )
+                log_writer.action_fail_info(action_name,
+                                            self._session_id, self)
+            elif action_name == "sleep":
+                new_energy = (
+                    self._energy
+                    - defaults.ENERGY_ADD_WHEN_SLEEP[self._level]
+                    - random_number
+                )
+                self._energy = general_functions.clamp(
+                    new_energy, defaults.TRAIT_MIN_VAL,
+                    defaults.TRAIT_MAX_VAL
+                )
+                log_writer.action_fail_info(action_name,
+                                            self._session_id, self)
+            elif action_name == "play":
+                new_happiness = (
+                    self._happiness
+                    - defaults.HAPPINESS_ADD_WHEN_PLAY[self._level]
+                    - random_number
+                )
+                self._happiness = general_functions.clamp(
+                    new_happiness, defaults.TRAIT_MIN_VAL,
+                    defaults.TRAIT_MAX_VAL
+                )
+                log_writer.action_fail_info(action_name,
+                                            self._session_id, self)
+                sqlite_db.update_pet(self._session_id, self, defaults.DATABASE_FILE)
+            return False
+        return True
