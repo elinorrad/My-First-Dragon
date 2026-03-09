@@ -1,0 +1,33 @@
+{% extends 'base.html'%}
+{% block title %}
+    BI Page <3
+{% endblock %}
+{% block content %}
+    <h1>BIIIIIIIII🐱‍👤🐱‍👤🐱‍👤🐱‍👤🐱‍👤</h1>
+    <div class="container">
+        <div class="circle">
+            <h5>Happiest hour</h5>
+            <h5>{{ happiest_hour }}</h5>
+            <h4>value: {{ happiest_value }}</h4>
+        </div>
+        <div class="circle">
+            <h5>Most common action</h5>
+            <h5>{{ most_common_action }}</h5>
+            <h4>value: {{ most_common_action_amount }}</h4>
+        </div>
+        <div class="circle">
+            <h5>Average happiness</h5>
+            <h5>{{ happiness_average_value }}</h5>
+        </div>
+        <div class="circle">
+            <h5>Actions per date</h5>
+            {% for key, value in actions_per_date.items() %}
+                <h5>{{ key }}: {{ value }}</h5>
+            {% endfor %}
+        </div>
+        <div class="circle">
+            <h5>Average time between actions</h5>
+            <h5>{{ average_time_between_actions }}</h5>
+        </div>
+    </div>
+{% endblock %}
