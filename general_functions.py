@@ -1,4 +1,8 @@
 import os
+
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
+
 import log_writer
 import defaults
 
@@ -126,3 +130,18 @@ def check_create_pet_params(pet_type: str, pet_name: str,
         error += "Invalid level! Please enter an integer. "
 
     return error
+
+
+def set_basic_attributes(span, session_id: str, pet_name: str,
+                         pet_type: str) -> None:
+    """
+    The function sets the basic attributes of the pet.
+    :param span: The span to set the basic attributes to.
+    :param session_id: The session id that the pet was created from.
+    :param pet_name: The pet name.
+    :param pet_type: The pet type.
+    :return: None.
+    """
+    span.set_attribute("session_id", session_id)
+    span.set_attribute("pet_name", pet_name)
+    span.set_attribute("pet_type", pet_type)

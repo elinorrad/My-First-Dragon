@@ -1,5 +1,8 @@
 import uuid
 from typing import Union
+
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
 from werkzeug import Response
 import app_service
 import backend_main
@@ -38,50 +41,52 @@ def post_create_animal() -> Union[str, Response]:
     This is the create animal page.
     :return: The create animal page.
     """
-    check_if_user_connected()
-    if request.method == "POST":
-        pet_type = request.form.get("pet_type")
-        pet_name = request.form.get("pet_name")
-        level = request.form.get("level")
-        error = general_functions.check_create_pet_params(
-            str(pet_type), str(pet_name), str(level), str(session.get("id")))
-    else:
-        return render_template(
-            "create_animal.html",
-            possible_pets=app.config["POSSIBLE_PETS"],
-            possible_levels=app.config["POSSIBLE_LEVELS"],
-        )
-
-    if error != "":
-        return render_template(
-            "create_animal.html",
-            possible_pets=app.config["POSSIBLE_PETS"],
-            possible_levels=app.config["POSSIBLE_LEVELS"],
-            error=error,
-        )
-    else:
-        try:
-            sqlite_db.save_pet(session["id"],
-                               backend_main.create_pet(
-                                   int(str(pet_type)), str(pet_name),
-                                   int(str(level)), app.config["LOG_FILE"], str(session.get("id")),
-                                   app.config["TRACER"]
-                               ),
-                               defaults.DATABASE_FILE)
-        except ValueError as e:
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span("create_animal") as span:
+        check_if_user_connected()
+        if request.method == "POST":
+            pet_type = request.form.get("pet_type")
+            pet_name = request.form.get("pet_name")
+            level = request.form.get("level")
+            error = general_functions.check_create_pet_params(
+                str(pet_type), str(pet_name), str(level), str(session.get("id")))
+        else:
             return render_template(
                 "create_animal.html",
                 possible_pets=app.config["POSSIBLE_PETS"],
                 possible_levels=app.config["POSSIBLE_LEVELS"],
-                error=str(e)
             )
-        app.config["POSSIBLE_ACTIONS"][session["id"]] = {
-            "eat": my_pet().eat,
-            "sleep": my_pet().sleep,
-            "play": my_pet().play,
-        }
-        app.config["IS_ANIMAL_CREATED"][session["id"]] = True
-        return redirect("/")
+
+        if error != "":
+            span.set_status(Status(StatusCode.ERROR, error))
+            return render_template(
+                "create_animal.html",
+                possible_pets=app.config["POSSIBLE_PETS"],
+                possible_levels=app.config["POSSIBLE_LEVELS"],
+                error=error,
+            )
+        else:
+            try:
+                sqlite_db.save_pet(session["id"],
+                                   backend_main.create_pet(
+                                       int(str(pet_type)), str(pet_name),
+                                       int(str(level)), app.config["LOG_FILE"], str(session.get("id"))                               ),
+                                   defaults.DATABASE_FILE)
+            except ValueError as e:
+                span.set_status(Status(StatusCode.ERROR, str(e)))
+                return render_template(
+                    "create_animal.html",
+                    possible_pets=app.config["POSSIBLE_PETS"],
+                    possible_levels=app.config["POSSIBLE_LEVELS"],
+                    error=str(e)
+                )
+            app.config["POSSIBLE_ACTIONS"][session["id"]] = {
+                "eat": my_pet().eat,
+                "sleep": my_pet().sleep,
+                "play": my_pet().play,
+            }
+            app.config["IS_ANIMAL_CREATED"][session["id"]] = True
+            return redirect("/")
 
 
 @app.route("/")

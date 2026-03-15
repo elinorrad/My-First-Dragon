@@ -1,7 +1,8 @@
 import random
 from typing import Dict
 
-from opentelemetry.trace import Tracer
+from opentelemetry import trace
+from opentelemetry.trace import Tracer, Status, StatusCode
 
 import general_functions
 import log_writer
@@ -11,30 +12,20 @@ import sqlite_db
 
 class Pet:
     def __init__(
-        self,
-        name: str,
-        pet_type: str,
-        level: int,
-        session_id: str,
-        tracer: Tracer,
-        hunger: int = defaults.DEFAULT_HUNGER,
-        happiness: int = defaults.DEFAULT_HAPPINESS,
-        energy: int = defaults.DEFAULT_ENERGY,
-        points: int = defaults.DEFAULT_POINTS,
-        log_file: str = defaults.DEFAULT_LOG_FILE
+            self,
+            name: str,
+            pet_type: str,
+            level: int,
+            session_id: str,
+            hunger: int = defaults.DEFAULT_HUNGER,
+            happiness: int = defaults.DEFAULT_HAPPINESS,
+            energy: int = defaults.DEFAULT_ENERGY,
+            points: int = defaults.DEFAULT_POINTS,
+            log_file: str = defaults.DEFAULT_LOG_FILE
     ) -> None:
-        """
-        The constructor for Pet.
-        :param name: The name of the pet.
-        :param pet_type: The type of pet.
-        :param hunger: The initial hunger of the pet.
-        :param happiness: The initial happiness of the pet.
-        :param energy: The initial energy of the pet.
-        :param points: The initial points of the pet.
-        :return: None.
-        """
-        general_functions.check_pet_params(hunger, happiness,
-                                           energy, session_id)
+        general_functions.check_pet_params(
+            hunger, happiness, energy, session_id
+        )
         self._name = name
         self._pet_type = pet_type
         self._level = level
@@ -45,18 +36,15 @@ class Pet:
         self._log_file = log_file
         self._history: list = []
         self._session_id = session_id
-        #self._tracer = tracer
-        log_writer.new_pet_log_info(name, pet_type, hunger,
-                                    happiness, energy, points,
-                                    self._session_id)
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # del state["_tracer"]
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
+        log_writer.new_pet_log_info(
+            name,
+            pet_type,
+            hunger,
+            happiness,
+            energy,
+            points,
+            self._session_id
+        )
 
     def _add_action_to_history(self, action: str) -> None:
         """
@@ -71,41 +59,56 @@ class Pet:
         The function for the pet to eat.
         :return: a success or fail message.
         """
-
         action_name = "eat"
+        tracer = trace.get_tracer(__name__)
 
-        is_succeeded = self._action_succeeded(action_name)
-        if not is_succeeded:
-            return "ughhh the pet vomited"
+        with tracer.start_as_current_span(action_name) as span:
 
-        # with self._tracer.start_as_current_span("update_traits") as span:
-        #     span.set_attribute("hunger_before", self._hunger)
+            general_functions.set_basic_attributes(span, self._session_id,
+                                                   self._name, self._pet_type)
 
-        self._hunger = general_functions.clamp(
-            self._hunger - defaults.HUNGER_REDUCE_WHEN_EAT[self._level],
-            defaults.TRAIT_MIN_VAL,
-            defaults.TRAIT_MAX_VAL,
-        )
+            span.set_attribute("hunger_before", self._hunger)
+            span.set_attribute("energy_before", self._energy)
 
-        self._energy = general_functions.clamp(
-            self._energy + defaults.ENERGY_ADD_WHEN_EAT[self._level],
-            defaults.TRAIT_MIN_VAL,
-            defaults.TRAIT_MAX_VAL,
-        )
+            is_succeeded = self._action_succeeded(action_name)
+            if not is_succeeded:
+                span.set_status(Status(StatusCode.ERROR, "The pet vomited"))
+                span.set_attribute("hunger_after", self._hunger)
+                span.set_attribute("energy_after", self._energy)
+                return "ughhh the pet vomited"
 
-            # span.set_attribute("hunger_after", self._hunger)
+            self._hunger = general_functions.clamp(
+                self._hunger - defaults.HUNGER_REDUCE_WHEN_EAT[self._level],
+                defaults.TRAIT_MIN_VAL,
+                defaults.TRAIT_MAX_VAL,
+            )
 
-        self._points += defaults.POINTS_ADD_WHEN_EAT
+            self._energy = general_functions.clamp(
+                self._energy + defaults.ENERGY_ADD_WHEN_EAT[self._level],
+                defaults.TRAIT_MIN_VAL,
+                defaults.TRAIT_MAX_VAL,
+            )
+
+            span.set_attribute("hunger_after", self._hunger)
+            span.set_attribute("energy_after", self._energy)
+
+            span.set_attribute("points_before", self._points)
+            self._points += defaults.POINTS_ADD_WHEN_EAT
+            span.set_attribute("points_after", self._points)
 
         self._add_action_to_history(action_name)
         log_writer.action_log_info(action_name, self)
-        sqlite_db.update_pet(self._session_id, self, defaults.DATABASE_FILE)
-
+        sqlite_db.update_pet(
+            self._session_id,
+            self,
+            defaults.DATABASE_FILE
+        )
         return (
             f"The pet ate! "
-            f"Current trait values: hunger: {self._hunger},"
-            f" energy: {self._energy}, happiness: {self._happiness},"
-            f" points: {self._points}"
+            f"hunger: {self._hunger}, "
+            f"energy: {self._energy}, "
+            f"happiness: {self._happiness}, "
+            f"points: {self._points}"
         )
 
     def sleep(self) -> str:
@@ -115,24 +118,42 @@ class Pet:
         """
 
         action_name = "sleep"
+        tracer = trace.get_tracer(__name__)
 
-        is_succeeded = self._action_succeeded(action_name)
-        if not is_succeeded:
-            return "ughhh I slept so bad!! I am just more tired now"
+        with tracer.start_as_current_span(action_name) as span:
 
-        self._hunger = general_functions.clamp(
-            self._hunger + defaults.HUNGER_ADD_WHEN_SLEEP[self._level],
-            defaults.TRAIT_MIN_VAL,
-            defaults.TRAIT_MAX_VAL,
-        )
+            general_functions.set_basic_attributes(span, self._session_id,
+                                                   self._name, self._pet_type)
 
-        self._energy = general_functions.clamp(
-            self._energy + defaults.ENERGY_ADD_WHEN_SLEEP[self._level],
-            defaults.TRAIT_MIN_VAL,
-            defaults.TRAIT_MAX_VAL,
-        )
+            span.set_attribute("hunger_before", self._hunger)
+            span.set_attribute("energy_before", self._energy)
 
-        self._points += defaults.POINTS_ADD_WHEN_SLEEP
+            is_succeeded = self._action_succeeded(action_name)
+            if not is_succeeded:
+                span.set_status(Status(StatusCode.ERROR, "The pet slept bad"))
+                span.set_attribute("hunger_after", self._hunger)
+                span.set_attribute("energy_after", self._energy)
+                return "ughhh I slept so bad!! I am just more tired now"
+
+
+            self._hunger = general_functions.clamp(
+                self._hunger + defaults.HUNGER_ADD_WHEN_SLEEP[self._level],
+                defaults.TRAIT_MIN_VAL,
+                defaults.TRAIT_MAX_VAL,
+            )
+
+            self._energy = general_functions.clamp(
+                self._energy + defaults.ENERGY_ADD_WHEN_SLEEP[self._level],
+                defaults.TRAIT_MIN_VAL,
+                defaults.TRAIT_MAX_VAL,
+            )
+
+            span.set_attribute("hunger_after", self._hunger)
+            span.set_attribute("energy_after", self._energy)
+
+            span.set_attribute("points_before", self._points)
+            self._points += defaults.POINTS_ADD_WHEN_SLEEP
+            span.set_attribute("points_after", self._points)
 
         self._add_action_to_history(action_name)
         log_writer.action_log_info(action_name, self)
@@ -152,25 +173,40 @@ class Pet:
         """
 
         action_name = "play"
+        tracer = trace.get_tracer(__name__)
 
-        is_succeeded = self._action_succeeded("play")
-        if not is_succeeded:
-            return "ughhh I didn't like the play at all!" \
-                   " Now I am not happy at all."
+        with tracer.start_as_current_span(action_name) as span:
 
-        self._energy = general_functions.clamp(
-            self._energy - defaults.ENERGY_REDUCE_WHEN_PLAY[self._level],
-            defaults.TRAIT_MIN_VAL,
-            defaults.TRAIT_MAX_VAL,
-        )
+            general_functions.set_basic_attributes(span, self._session_id,
+                                                   self._name, self._pet_type)
 
-        self._happiness = general_functions.clamp(
-            self._happiness + defaults.HAPPINESS_ADD_WHEN_PLAY[self._level],
-            defaults.TRAIT_MIN_VAL,
-            defaults.TRAIT_MAX_VAL,
-        )
+            span.set_attribute("energy_before", self._energy)
+            span.set_attribute("happiness_before", self._happiness)
 
-        self._points += defaults.POINTS_ADD_WHEN_PLAY
+            is_succeeded = self._action_succeeded(action_name)
+            if not is_succeeded:
+                span.set_status(Status(StatusCode.ERROR,
+                                    "The pet didn't like the play"))
+                span.set_attribute("energy_after", self._energy)
+                span.set_attribute("happiness_after", self._happiness)
+                return "ughhh I didn't like the play at all!" \
+                       " Now I am not happy at all."
+
+            self._energy = general_functions.clamp(
+                self._energy - defaults.ENERGY_REDUCE_WHEN_PLAY[self._level],
+                defaults.TRAIT_MIN_VAL,
+                defaults.TRAIT_MAX_VAL,
+            )
+
+            self._happiness = general_functions.clamp(
+                self._happiness + defaults.HAPPINESS_ADD_WHEN_PLAY[self._level],
+                defaults.TRAIT_MIN_VAL,
+                defaults.TRAIT_MAX_VAL,
+            )
+
+            span.set_attribute("points_before", self._points)
+            self._points += defaults.POINTS_ADD_WHEN_PLAY
+            span.set_attribute("points_after", self._points)
 
         self._add_action_to_history(action_name)
         log_writer.action_log_info(action_name, self)

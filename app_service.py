@@ -41,23 +41,22 @@ def make_secret_key() -> bytes:
 def create_app() -> Flask:
     """
     The function creates the flask app
-    :return: The flask app
+    :return: The flask app.
     """
+
     app = Flask(__name__)
-    app.config["LOG_FILE"] =\
+    app.config["LOG_FILE"] = \
         general_functions.generate_log_file_path(os.getcwd())
     sqlite_db.init_db(defaults.DATABASE_FILE)
     app.secret_key = make_secret_key()
     app.config["IS_ANIMAL_CREATED"] = {}
     app.config["POSSIBLE_PETS"] = {pet.value: pet.name.capitalize()
-                                   for pet in defaults.Pets}
+        for pet in defaults.Pets}
     app.config["POSSIBLE_LEVELS"] = {level.value: level.name.capitalize()
-                                     for level in defaults.Levels}
+        for level in defaults.Levels}
     app.config["POSSIBLE_ACTIONS"] = {}
-    app.config["TRACER"], app.config["TRACER_PROVIDER"] = trace_service.create_tracer()
-    app.config["JAEGER_EXPORTER"] = trace_service.create_jaeger_exporter()
-    app.config["SPAN_PROCESSOR"] = trace_service.create_span_processor(app.config["JAEGER_EXPORTER"])
-    app.config["TRACER_PROVIDER"].add_span_processor(app.config["SPAN_PROCESSOR"])
+    tracer = trace_service.create_tracer()
+    app.config["TRACER"] = tracer
     return app
 
 

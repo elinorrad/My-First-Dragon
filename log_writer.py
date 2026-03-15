@@ -125,6 +125,7 @@ def any_error(data: str, session_id: str) -> None:
     logging.error(f"{data}", extra={"session_id": session_id})
 
 
+
 def chose_info(what_chosen: str, data: str, session_id: str) -> None:
     """
     The function creates an info log when pet type is chosen.
