@@ -1,0 +1,30 @@
+{% extends 'base.html'%}
+{% block title %}
+    Status Page <3
+{% endblock %}
+{% block content %}
+    {% if rain == "eat" %}
+    <script src="{{ url_for('static', filename='js/rain.js') }}"></script>
+    <script>do_rain("/static/images/eat.png")</script>
+    {% elif rain == "sleep" %}
+    <script src="{{ url_for('static', filename='js/rain.js') }}"></script>
+    <script>do_rain("/static/images/sleep.png")</script>
+    {% elif rain == "play" %}
+    <script src="{{ url_for('static', filename='js/rain.js') }}"></script>
+    <script>do_rain("/static/images/play.png")</script>
+    {% endif %}
+    <img src="{{ image }}" class="animal_image">
+    <h1>Its time to make acctions on you pet🐱‍🐉</h1>
+    <form action="/action/eat" method="post">
+        <button type="submit" name="eat" value="eat" class="button button1">eat action</button>
+    </form>
+    <form action="/action/sleep" method="post">
+        <button type="submit" name="sleep" value="sleep" class="button button1">sleep action</button>
+    </form>
+    <form action="/action/play" method="post">
+        <button type="submit" name="play" value="play" class="button button1">play action</button>
+    </form>
+    {% if output %}
+        <h2 style="position: absolute">{{ output }}</h2>
+    {% endif %}
+{% endblock %}
