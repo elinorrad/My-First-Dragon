@@ -1,0 +1,40 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.6.4">
+  <diagram name="Page-1" id="JnBUYOE4cxW-Xt3NxHGt">
+    <mxGraphModel dx="1042" dy="535" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-6" edge="1" parent="1" source="TpBeTQtDXumbuJOQYxPO-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="TpBeTQtDXumbuJOQYxPO-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="browser" vertex="1">
+          <mxGeometry height="60" width="120" x="60" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-7" edge="1" parent="1" source="TpBeTQtDXumbuJOQYxPO-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="TpBeTQtDXumbuJOQYxPO-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Flask App&#xa;Port: 5000&#xa;OpenTelemetry" vertex="1">
+          <mxGeometry height="60" width="120" x="250" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-8" edge="1" parent="1" source="TpBeTQtDXumbuJOQYxPO-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="TpBeTQtDXumbuJOQYxPO-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Jaeger&lt;br&gt;Port: 4318" vertex="1">
+          <mxGeometry height="60" width="120" x="450" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Jaeger UI&#xa;Port: 16686" vertex="1">
+          <mxGeometry height="60" width="120" x="650" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-10" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;HTTP (5000)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="20" width="70" x="170" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-16" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;OTLP HTTP (4318)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="20" width="90" x="360" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="TpBeTQtDXumbuJOQYxPO-17" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;TRACE DATA&lt;/font&gt;" vertex="1">
+          <mxGeometry height="20" width="70" x="570" y="260" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

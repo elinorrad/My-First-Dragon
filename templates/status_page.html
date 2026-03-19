@@ -1,0 +1,45 @@
+{% extends 'base.html'%}
+{% block title %}
+    Status Page <3
+{% endblock %}
+{% block content %}
+    <h1>Here is the status of you pet༼ つ ◕_◕ ༽つ🐱‍🚀</h1>
+    <div class="container">
+        <div class="circle">
+            <h2>Hunger</h2>
+            {% if data.hunger|int < 50 %}
+                <h2 style="color: chartreuse">{{ data.hunger }}</h2>
+            {% else %}
+                <h2 style="color: firebrick">{{ data.hunger }}</h2>
+            {% endif %}
+        </div>
+        <div class="circle">
+            <h2>Energy</h2>
+            {% if data.energy|int > 50 %}
+                <h2 style="color: chartreuse">{{ data.energy }}</h2>
+            {% else %}
+                <h2 style="color: firebrick">{{ data.energy }}</h2>
+            {% endif %}
+        </div>
+        <div class="circle">
+            <h2>Happiness</h2>
+            {% if data.happiness|int > 50 %}
+                <h2 style="color: chartreuse">{{ data.happiness }}</h2>
+            {% else %}
+                <h2 style="color: firebrick">{{ data.happiness }}</h2>
+            {% endif %}
+        </div>
+        <div class="circle">
+            <h2>Points</h2>
+            <h2>{{ data.points }}</h2>
+        </div>
+        <div class="circle">
+            <h2>Pets score</h2>
+            {% if data.pet_score|int > 50 %}
+                <h2 style="color: chartreuse">{{ data.pet_score }}</h2>
+            {% else %}
+                <h2 style="color: firebrick">{{ data.pet_score }}</h2>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

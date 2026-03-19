@@ -1,0 +1,31 @@
+{% extends 'base.html'%}
+{% block title %}
+    Home Page <3
+{% endblock %}
+{% block content %}
+    <h1>Lets create your pet🦔🦦🦩</h1>
+    {% if error %}
+        <h3>{{ error }}</h3>
+    {% endif %}
+    <h2>Please fill the following to create the pet:</h2>
+    <form method="POST" action="{{ url_for('post_create_animal') }}">
+      <h4>Pet type</h4>
+        <h4>Possible animals are:</h4>
+        {% for key, value in possible_pets.items() %}
+            <h4>{{ key }}. {{ value }}</h4>
+        {% endfor %}
+      <input name="pet_type">
+
+      <h4>Pet name</h4>
+      <input name="pet_name">
+
+      <h4>Level</h4>
+        <h4>Possible levels are:</h4>
+        {% for key, value in possible_levels.items() %}
+            <h4>{{ key }}. {{ value }}</h4>
+        {% endfor %}
+      <input name="level">
+
+      <br><br><button class="button button1" type="submit">continue</button>
+    </form>
+{% endblock %}
